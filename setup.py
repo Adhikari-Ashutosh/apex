@@ -20,6 +20,8 @@ from torch.utils.cpp_extension import (
 # ninja build does not work unless include_dirs are abs path
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
+# Variable to skip Cuda binary vs bare metal check, use with --skip-cuda-version-checking
+SKIP_CUDA_CHECK = False
 
 def get_cuda_bare_metal_version(cuda_dir):
     raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
@@ -37,6 +39,8 @@ def check_cuda_torch_binary_vs_bare_metal(cuda_dir):
     print("\nCompiling cuda extensions with")
     print(raw_output + "from " + cuda_dir + "/bin\n")
 
+    if SKIP_CUDA_CHECK:
+        return
     if (bare_metal_version != torch_binary_version):
         raise RuntimeError(
             "Cuda extensions are being compiled with a version of Cuda that does "
@@ -909,6 +913,9 @@ if "--gpu_direct_storage" in sys.argv:
         )
     )
 
+if "--skip-cuda-version-checking" in sys.argv:
+    SKIP_CUDA_CHECK = True
+    
 
 # Patch because `setup.py bdist_wheel` and `setup.py develop` do not support the `parallel` option
 parallel = None
